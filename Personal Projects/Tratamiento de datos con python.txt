@@ -1,0 +1,132 @@
+1. Tratar valores negativos (reemplazar valores)
+
+df["Ingresos"] = df["Ingresos"].apply(lambda x: np.nan if x < 0 else x)
+- Reemplaza los valores negativos por valores nan.
+
+2. Imputar valores faltantes (rellenar valores faltantes)
+
+for column in ["Edad", "Ingresos", "Hijos"]:
+	median_value = df[column].median()
+	df[column].fillna(median_value, inplace=True)
+- Rellena los valores faltantes por la mediana de las columnas "Edad", "Ingresos", "Hijos".
+
+3. Mapeo de datos (sustituir valores)
+
+educating_mapping = {
+	"mastre":"Master",
+	"pHd":"PhD"}
+
+df["Nivel_educacion"].replace(educating_mapping, inplace=True)
+- Reemplaza en la columna "Nivel_educacion" las palabras "mastre" por "Master" y "pHd" por "PhD".
+
+4. Casteo de tipos (Cambiar tipos de datos)
+
+df["Edad"] = df["Edad"].astype(int)
+- Cambia el tipo de dato de la columna "Edad" a entero.
+
+5. Creación de un pipeline para limpiar un dataframe
+
+# Reemplazar valores negativos por nan
+def remove_negative_values(df, column):
+	df[column] = df[column].apply(lambda x: np.nan if x < 0 else x)
+	return df
+
+# Remover outliers usando zscore
+def remove_outliers_with_zscore(df, column, threshold = 2):
+	column_mean = df[column].mean()
+	column_std = df[column].std()
+	df[column] = df[column].mask(((df[column] - column_mean) / column_std).abs() > threshold, column_mean)
+	return df
+
+# Mapeo de datos
+def map_column_values(df, column, mapping_dict):
+	df[column] = df[column].apply(lambda value: mapping_dict.get(value, value))
+	return df
+
+# Rellenar valores nan
+def fill_na_in_column(df, column, fill_value):
+	df[column].fillna(fill_value, inplace=True)
+	return df
+
+# Funcion que contendra el mapeo y las funciones de limpieza
+def preprocess_data(df):
+	educating_mapping = {
+	"mastre":"Master",
+	"pHd":"PhD"}
+
+	gender_mapping = {
+	"m":"M",
+	"f":"F"}
+
+	return (
+		df.pipe(remove_negative_values, "Edad")
+		.pipe(remove_negative_values, "Ingresos")
+		.pipe(remove_outliers_with_zscore, Ingresos")
+		.pipe(map_column_values, "Nivel_educacion", education_mapping)
+		.pipe(map_column_values, "Genero", gender_mapping)
+		.pipe(fill_na_in_column, "Ciudad", "Desconocido")
+		.pipe(fill_na_in_column, "Nivel_educacion", "Desconocido")
+		.pipe(fill_na_in_column, "Edad", df["Edad"].median())
+		.pipe(fill_na_in_column, "Ingresos", df["Edad"].mean())
+		)
+
+df = pd.read_csv("dataset".csv", index_col=0)
+
+df = preprocess_data(df)
+
+6. Normalización de datos
+- Lleva los datos a un rango o escala determinada, por ejemplo entre 0 y 1.
+
+from sklearn.preprocessing import MinMaxScaler
+
+scaler = MinMaxScaler()
+scaled_data = scaler.fit_transform(df["sqft"])
+
+# Funcion para normalizar datos
+def min_max_scaler(df, column):
+	column_min = df[column].min()
+	column_max = df[column].max()
+	df[column] = (df[column] - column_min) / (column_max - column_min)
+	return df
+
+7. Estandarización de datos
+- Cambia la distribución de los datos para que tengan una media de 0 y desviación estándar de 1.
+
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+normalized_data = scaler.fit_transform(df["sqft"])
+
+# Funcion para estandarizar datos
+def standard_scaler(df, column):
+	column_mean = df[column].mean()
+	column_std = df[column].std()
+	df[column] = (df[column] - column_mean) / column_std
+	return df
+
+8. Label encoding de datos (aplicado a una sola columna)
+- Asigna a las variables categoricas de una columnna un número
+
+from sklearn.preprocessing import LabelEncoder
+
+model = LabelEncoder()
+
+df["Cargo"] = model.fit_transform(df["Cargo"])
+
+9. Label encoding de datos (aplicado a varias columnas)
+
+from sklearn.preprocessing import OrdinalEncoder
+
+model = OrdinalEncoder()
+
+df[["Cargo", "Departamento", "Ubicacion"]] = model.fit_transform(df[["Cargo", "Departamento", "Ubicacion"]])
+
+# Funcion para hacer un label encoding
+def label_encode(df, columns):
+	for column in columns:
+		unique_values = df[column].unique()
+		value_to_int = {value : i for i, value in enumerate(unique_values)}
+		df[column + "_enconded"] = df[column].replace(value_to_int)
+	return df
+
+df_label_custom = label_encode(df, ["Cargo", "Departamento", "Ubicacion"])

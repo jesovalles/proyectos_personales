@@ -1,0 +1,78 @@
+# Función match
+error = input('Introduzca un código de error':\n')
+
+match error:
+	case "200":
+		print('Todo OK')
+	case "404":
+		print('Página no encontrada')
+	case "500":
+		print('Error interno del servidor')
+	case "503":
+		print('Servicio no disponible')
+	case _:
+		print('Error no disponible')
+
+- El match funciona como un IF y ELSE, se lee si error = 200, "Todo OK",
+sino "Error no disponible.
+
+
+# Reemplazar un elemento de una lista usando su posición
+colores = ['rojo', 'azul', 'amarillo']
+
+colores[1] = 'naranja'
+
+- Esto reemplaza 'azul' por 'naranja' en la lista.
+
+
+# Eliminar un elemento de una lista usando su nombre
+colores = ['rojo', 'azul', 'amarillo']
+
+colores.remove('azul')
+
+- Esto elimina 'azul' en la lista.
+
+
+# Contar la cantidad de elementos de una lista
+colores = ['rojo', 'azul', 'amarillo']
+
+print(len(colores))
+
+- Esto mostrará 3 ya que existen 3 elementos en la lista
+
+
+# Parametros de condicionales
+CONTINUE
+colores = ['rojo', 'azul', 'amarillo']
+
+for color in colores:
+	if color == 'azul':
+		continue
+	print(f"Color: {color}"
+
+- Cuando color sea igual a 'azul', se omite y pasa al siguiente elemento
+
+BREAK
+colores = ['rojo', 'azul', 'amarillo']
+
+for color in colores:
+	if color == 'azul':
+		break
+	print(f"Color: {color}"
+
+- Cuando color sea igual a 'azul', se detiene el bucle for
+
+
+# Funcion vs Funcion Lambda
+def multiplicacion(numero1, numero2):
+	return numero1 * numero2
+
+multiplicacion = lambda numero1, numero2 : numero1 * numero 2
+
+resultado = multiplicacion(5, 10)
+
+- La función lambda funciona como una funcion solo que la sintaxis es un poco mas corta
+
+
+
+
