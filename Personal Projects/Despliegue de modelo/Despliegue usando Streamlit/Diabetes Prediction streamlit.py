@@ -4,7 +4,7 @@ import pickle
 import streamlit as st
 
 # cargando el modelo guardado
-loaded_model = pickle.load(open('C:\\Users\\Alejandro\\Proyectos\\Personal Projects\\Despliegue de modelo\\modelo_entrenado.sav', 'rb'))
+loaded_model = pickle.load(open('C:\\Users\\Alejandro\\Proyectos\\Personal Projects\\Despliegue de modelo\\Despliegue usando Streamlit\\modelo_entrenado.sav', 'rb'))
 
 # creando una funcion para predecir
 def diabetes_prediction(input_data):
@@ -53,8 +53,6 @@ def main():
 # ejecucion de la funcion
 if __name__ == '__main__':
     main()
-    
-    
     
     
     
