@@ -1,0 +1,237 @@
+USE UnoEE_InmelIngenieria_Real
+SELECT DISTINCT
+	PD.f420_id_co PD_ID_Centro_Operacion
+	,CIA.f010_razon_social
+	,CO.[f285_descripcion] PD_Centro_Operacion
+	,Cont.f015_contacto Contacto
+	,CONCAT(PD.f420_id_co,'-',PD.f420_id_tipo_docto	,'-',RIGHT('00000000' + CAST(PD.f420_consec_docto AS VARCHAR(8)), 8)) PD_Nro_Solicitud
+	,TD.f021_descripcion PD_Tipo_Doc
+	,PD.f420_fecha PD_Fecha
+	,PD.f420_fecha_ts_aprobacion PD_Fecha_Apr
+	,PD.f420_usuario_creacion PD_Usuario_Creador
+	,PD.f420_usuario_aprobacion PD_Aprobador
+	--
+	,MPD.f421_cant_pedida PD_Cant_Pedida
+	,PDCECO.f284_id PD_CentroCosto
+	,OCCECO.f284_id OC_CentroCosto
+	,RFPD.v121_referencia PD_Referencia
+	,RFPD.v121_descripcion_corta PD_DescripcionItem            
+	,CIM.f106_descripcion Linea
+	,CIM2.f106_descripcion Grupo
+	,CIM3.f106_descripcion Subgrupo
+	,CASE
+		WHEN MPD.f421_id_motivo_otros IS NOT NULL AND OC.f420_id_co IS NULL THEN 'PD Anulado'
+		ELSE PD_est.[f054_descripcion]
+		END PD_Descripcion
+	,Otr_Motiv.f1461_descripcion PD_Descr_Otr_Motiv
+	,CASE
+		WHEN EM2.f350_id_co IS NOT NULL THEN CONCAT(EM2.f350_id_co, '-',EM2.f350_id_tipo_docto, '-',RIGHT('00000000' + CAST(EM2.f350_consec_docto AS VARCHAR(8)), 8))
+		WHEN OC.f420_id_co IS NOT NULL THEN CONCAT(OC.f420_id_co,'-',OC.f420_id_tipo_docto	,'-',RIGHT('00000000' + CAST(OC.f420_consec_docto AS VARCHAR(8)), 8)) 
+		WHEN PD.f420_id_co IS NOT NULL THEN CONCAT(PD.f420_id_co,'-',PD.f420_id_tipo_docto	,'-',RIGHT('00000000' + CAST(PD.f420_consec_docto AS VARCHAR(8)), 8))
+		ELSE CONCAT(PD.f420_id_co,'-',PD.f420_id_tipo_docto	,'-',RIGHT('00000000' + CAST(PD.f420_consec_docto AS VARCHAR(8)), 8))
+		END UltimoDocumento
+	,IIF(PD.f420_fecha_ts_aprobacion IS NOT NULL,DATEDIFF(DAY,PD.f420_fecha,PD.f420_fecha_ts_aprobacion),DATEDIFF(DAY,PD.f420_fecha,GETDATE())) Ans0
+	--	
+	,OC.f420_id_co OC_Centro_Operacion	
+	,CASE
+		WHEN OC.f420_rowid IS NULL THEN NULL 
+		ELSE CONCAT(OC.f420_id_co,'-',OC.f420_id_tipo_docto	,'-',RIGHT('00000000' + CAST(OC.f420_consec_docto AS VARCHAR(8)), 8)) 
+		END [OC_Nro_Solicitud]
+	,OCTD.f021_descripcion OC_Tipo_Doc
+	,OC.f420_fecha OC_Fecha
+	,Prov.f202_descripcion_sucursal Proveedor
+	,Ter.f200_nit ProveedorNIT
+	,CASE
+		WHEN OC.f420_rowid IS NULL THEN NULL 
+		ELSE OC.f420_fecha_ts_aprobacion 
+		END OC_Fecha_Apr
+	,OC.f420_usuario_creacion OC_Usuario_Creador
+	,OC.f420_usuario_aprobacion OC_Aprobador
+	,OC_est.f054_descripcion OC_Descripcion
+	--
+	,MOC.f421_id_motivo_otros OC_Motivo_Otros --indica si hay algun error en la OC
+	,MOC.f421_cant_pedida OC_Cant_Pedida
+	,MOC.f421_precio_unitario OC_Precio_Unitario
+	,MOC.f421_vlr_bruto OC_vlr_bruto
+	,MOC.f421_vlr_neto OC_vlr_neto
+	,MOC.f421_vlr_imp OC_vlr_imp
+	,RFOC.v121_referencia OC_Referencia
+	----
+	,CASE
+		WHEN EM2.f350_id_co IS NULL THEN NULL 
+		ELSE CONCAT(EM2.f350_id_co, '-',EM2.f350_id_tipo_docto, '-',RIGHT('00000000' + CAST(EM2.f350_consec_docto AS VARCHAR(8)), 8))
+		END [EM_Nro_Solicitud]
+	,EMTD.f021_descripcion EM_Tipo_Doc
+	,EM2.f350_fecha EM_Fecha
+	,EM2.f350_usuario_creacion EM_Usuario_Creador
+	----
+	,RFEM.v121_referencia EM_Referencia
+	,MEM.f470_cant_base EM_Cant_base
+	,MEM.f470_cant_1 EM_Cant_1
+	,MEM.f470_precio_uni EM_Precio_Unitario
+	,MEM.f470_vlr_bruto EM_vlr_bruto
+	,MEM.f470_vlr_neto EM_vlr_neto
+	,MEM.f470_vlr_imp EM_vlr_imp
+	--,MEM.f470_total_db EM_Total_db
+	,EM_est.f054_descripcion EM_Descripcion
+	----
+	,CASE
+		WHEN FC.f350_id_co IS NULL THEN NULL 
+		ELSE CONCAT(FC.f350_id_co, '-',FC.f350_id_tipo_docto, '-',RIGHT('00000000' + CAST(FC.f350_consec_docto AS VARCHAR(8)), 8))
+		END [FC_Nro_Solicitud]
+	,FC.f350_total_base_gravable FC_total_base_gravable
+	,FC.f350_total_db FC_total_db
+	,FC.f350_fecha FC_Fecha
+	--
+	,CAST(FE.f455_fecha_docto_prov As DATE) Fecha_Proveedor
+	,CASE WHEN FE.f455_fecha_docto_prov IS NULL THEN NULL ELSE CONCAT(FE.f455_prefijo_docto_prov,'-',f455_numero_docto_prov) END FE_Nro_Proveedor
+	,FE.f455_id_cond_pago FE_Cond_Pago_Proveedor
+	,FE.f455_vlr_imp FE_vlr_imp
+	,FE.f455_vlr_neto FE_vlr_neto
+	,FE.f455_vlr_bruto FE_vlr_bruto
+	--
+	,CASE WHEN DocPago.f350_id_co IS NULL THEN NULL ELSE CONCAT(DocPago.f350_id_co, '-',DocPago.f350_id_tipo_docto, '-',RIGHT('00000000' + CAST(DocPago.f350_consec_docto AS VARCHAR(8)), 8)) END [PAGO_Nro]
+	,DocPago.f350_total_db PAGO_total_db
+	,DocPago.f350_total_base_gravable PAGO_total_base_gravable
+	,CAST(DocPago.f350_fecha As DATE) PAGO_Fecha
+
+FROM t420_cm_oc_docto PD
+	LEFT JOIN t010_mm_companias CIA
+		ON PD.f420_id_cia = CIA.f010_id
+	LEFT JOIN [UnoEE_InmelIngenieria_Real].[dbo].[t285_co_centro_op] CO
+		ON CO.[f285_id] = PD.f420_id_co
+		  AND CO.[f285_id_cia] = PD.f420_id_cia
+	LEFT JOIN [UnoEE_InmelIngenieria_Real].[dbo].[t015_mm_contactos] cont --Para el Responsable del centro de operación
+		ON CO.f285_rowid_contacto = cont.f015_rowid
+			AND CO.f285_id_cia = cont.f015_id_cia
+	LEFT JOIN [dbo].[t421_cm_oc_movto] MPD
+		ON PD.f420_rowid = MPD.f421_rowid_oc_docto 
+			AND PD.f420_id_clase_docto = 401
+			AND MPD.f421_id_cia = PD.f420_id_cia
+	LEFT JOIN [dbo].[t284_co_ccosto] PDCECO
+		ON MPD.f421_rowid_ccosto_movto = PDCECO.f284_rowid
+			AND PDCECO.f284_id_cia = MPD.f421_id_cia
+	LEFT JOIN t028_mm_clases_documento PDCD
+		ON PD.f420_id_clase_docto = PDCD.f028_id
+	LEFT JOIN t034_mm_grupos_clases_docto PDGCD
+		ON PDCD.f028_id_grupo_clase_docto = PDGCD.f034_id
+	LEFT JOIN [dbo].[t054_mm_estados] PD_est --ESTADO DE LA SOLICITUD (SI ES ANULADO POR EJEMPLO)
+		ON PD_est.f054_id = MPD.f421_ind_estado
+			AND PD_Est.[f054_id_grupo_clase_docto] = PDGCD.f034_id
+	LEFT JOIN [UnoEE_InmelIngenieria_Real].[dbo].[v121] RFPD
+		ON MPD.f421_rowid_item_ext = RFPD.[v121_rowid_item_ext]
+			AND RFPD.v121_id_cia = MPD.f421_id_cia
+	LEFT JOIN t021_mm_tipos_documentos TD 
+		ON PD.f420_id_tipo_docto = TD.f021_id
+			AND TD.f021_id_cia = PD.f420_id_cia
+	LEFT JOIN t1461_mc_motivos_otros Otr_Motiv
+		ON MPD.f421_id_motivo_otros = Otr_Motiv.f1461_id
+			AND Otr_Motiv.f1461_id_cia = MPD.f421_id_cia
+	--Criterios Clasificación en los 3 niveles
+	LEFT JOIN [dbo].[t125_mc_items_criterios] IC 
+		ON RFPD.v121_rowid_item = IC.f125_rowid_item 
+			AND IC.f125_id_plan = 001
+			AND IC.f125_id_cia = RFPD.v121_id_cia
+	LEFT JOIN [dbo].[t106_mc_criterios_item_mayores] CIM
+		ON IC.f125_id_plan = CIM.f106_id_plan
+			AND IC.f125_id_cia = CIM.f106_id_cia
+			AND IC.f125_id_criterio_mayor = CIM.f106_id
+	LEFT JOIN [dbo].[t125_mc_items_criterios] IC2
+		ON RFPD.v121_rowid_item = IC2.f125_rowid_item
+			AND IC2.f125_id_plan = 002
+			AND IC2.f125_id_cia = RFPD.v121_id_cia
+	LEFT JOIN [dbo].[t106_mc_criterios_item_mayores] CIM2
+		ON IC2.f125_id_plan = CIM2.f106_id_plan
+			AND IC2.f125_id_cia = CIM2.f106_id_cia
+			AND IC2.f125_id_criterio_mayor = CIM2.f106_id
+	LEFT JOIN [dbo].[t125_mc_items_criterios] IC3
+		ON RFPD.v121_rowid_item = IC3.f125_rowid_item
+			AND IC3.f125_id_plan = 003
+			AND IC3.f125_id_cia = RFPD.v121_id_cia
+	LEFT JOIN [dbo].[t106_mc_criterios_item_mayores] CIM3
+		ON IC3.f125_id_plan = CIM3.f106_id_plan
+			AND IC3.f125_id_cia = CIM3.f106_id_cia
+			AND IC3.f125_id_criterio_mayor = CIM3.f106_id
+	--OC
+	LEFT JOIN [dbo].[t421_cm_oc_movto] MOC
+		ON MOC.f421_rowid_oc_movto = MPD.f421_rowid
+			--AND PDCECO.f284_rowid = MOC.f421_rowid_ccosto_movto
+			AND MOC.f421_id_cia = MPD.f421_id_cia
+	LEFT JOIN t420_cm_oc_docto OC
+		ON MOC.f421_rowid_oc_docto = OC.f420_rowid
+			AND OC.f420_id_cia = MOC.f421_id_cia
+	LEFT JOIN t202_mm_proveedores Prov 
+		ON OC.f420_rowid_tercero_prov = Prov.[f202_rowid_tercero]
+			AND OC.[f420_id_sucursal_prov] = Prov.[f202_id_sucursal]
+	LEFT JOIN t200_mm_terceros Ter
+		ON Prov.f202_rowid_tercero = Ter.f200_rowid
+			AND Ter.f200_id_cia = Prov.f202_id_cia
+	LEFT JOIN [dbo].[t284_co_ccosto] OCCECO
+		ON MOC.f421_rowid_ccosto_movto = OCCECO.f284_rowid
+			AND OCCECO.f284_id_cia = MOC.f421_id_cia
+	LEFT JOIN [UnoEE_InmelIngenieria_Real].[dbo].[v121] RFOC
+		ON MOC.f421_rowid_item_ext = RFOC.[v121_rowid_item_ext]
+			AND RFOC.v121_id_cia = MOC.f421_id_cia
+	LEFT JOIN t021_mm_tipos_documentos OCTD 
+		ON OC.f420_id_tipo_docto = OCTD.f021_id
+			AND OCTD.f021_id_cia = OC.f420_id_cia
+	--OC Estado
+	LEFT JOIN t028_mm_clases_documento OCCD
+		ON OC.f420_id_clase_docto = OCCD.f028_id
+	LEFT JOIN t034_mm_grupos_clases_docto OCGCD
+		ON OCCD.f028_id_grupo_clase_docto = OCGCD.f034_id
+	LEFT JOIN [UnoEE_InmelIngenieria_Real].[dbo].[t054_mm_estados] OC_est --ESTADO DE LA OC (SI ES ANULADO POR EJEMPLO)
+		ON OC_est.f054_id = MOC.f421_ind_estado
+			AND OC_Est.[f054_id_grupo_clase_docto] = OCGCD.f034_id
+	--EM
+	LEFT JOIN t451_cm_docto_compras EM
+		ON EM.f451_rowid_oc_docto = MOC.f421_rowid_oc_docto
+			AND EM.f451_id_clase_docto IN(408,409)
+			AND EM.f451_id_cia = MOC.f421_id_cia
+	LEFT JOIN t350_co_docto_contable EM2 
+		ON EM.f451_rowid_docto = EM2.f350_rowid
+			AND EM2.f350_id_cia = EM2.f350_id_cia
+	LEFT JOIN t470_cm_movto_invent MEM 
+		ON MEM.f470_rowid_docto = EM2.f350_rowid
+			AND MEM.f470_rowid_item_ext = MOC.f421_rowid_item_ext
+			AND MEM.f470_rowid_oc_movto = MOC.f421_rowid
+			AND MEM.f470_rowid_ccosto_movto = OCCECO.f284_rowid
+			AND MEM.f470_id_cia = EM2.f350_id_cia
+	LEFT JOIN [UnoEE_InmelIngenieria_Real].[dbo].[v121] RFEM
+		ON MEM.f470_rowid_item_ext = RFEM.[v121_rowid_item_ext]
+			AND RFEM.v121_id_cia = MEM.f470_id_cia
+	LEFT JOIN t021_mm_tipos_documentos EMTD 
+		ON EM2.f350_id_tipo_docto = EMTD.f021_id
+			AND EMTD.f021_id_cia = EM2.f350_id_cia
+	--EM Estado
+	LEFT JOIN t028_mm_clases_documento EMCD
+		ON EM.f451_id_clase_docto = EMCD.f028_id
+	LEFT JOIN t034_mm_grupos_clases_docto EMGCD
+		ON EMCD.f028_id_grupo_clase_docto = EMGCD.f034_id
+	LEFT JOIN [UnoEE_InmelIngenieria_Real].[dbo].[t054_mm_estados] EM_est --ESTADO DE LA EM (SI ES ANULADO POR EJEMPLO)
+		ON EM_est.f054_id = MEM.f470_ind_estado_cm
+			AND EM_Est.[f054_id_grupo_clase_docto] = EMGCD.f034_id
+	--FC
+	LEFT JOIN t350_co_docto_contable FC
+		ON FC.f350_rowid = EM.f451_rowid_docto_factura
+			AND FC.f350_id_cia = EM.f451_id_cia
+	LEFT JOIN [t455_cm_factura_docto] FE
+		ON FC.f350_rowid = FE.f455_rowid_docto
+			AND FC.f350_id_cia = FE.f455_id_cia
+	--PAGO
+	LEFT JOIN t353_co_saldo_abierto SAbierto
+		ON FC.f350_rowid = SAbierto.f353_rowid_docto
+			AND SAbierto.f353_id_cia = FC.f350_id_cia
+	LEFT JOIN t354_co_mov_saldo_abierto SAMov
+		ON SAbierto.f353_rowid = SAMov.f354_rowid_sa 
+			AND SAMov.f354_valor_db > 0
+	LEFT JOIN t350_co_docto_contable DocPago
+		ON SAMov.f354_rowid_docto = DocPago.f350_rowid
+			AND DocPago.f350_id_tipo_docto IN ('PE','CE') --> Nos aseguramos de que el documento devuelto es el pago
+	LEFT JOIN t351_co_mov_docto DocPagoMov
+		ON DocPago.f350_rowid = DocPagoMov.f351_rowid_docto 
+			AND SAMov.f354_rowid_mov_docto = DocPagoMov.f351_rowid
+
+WHERE PD.f420_id_clase_docto IN (401) --EL 401 ES EL PEDIDO
+	--AND PD_Est.[f054_descripcion] != 'Anulado' --PARA NO TRAER LOS PEDIDOS ANULADOS
+	AND PD.f420_id_cia IN (1,2)
